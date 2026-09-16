@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="13. Warning Level (no approval required)" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.644Z" hostname="Krishs-MacBook-Air.local" time="0.001">
-  <properties/>
-  <testcase name="systemctl stop is WARNING()" classname="ai.boss.guardrail.ShellPolicyEngineTest$WarningTests" time="0.0"/>
-  <testcase name="npm global install is WARNING not CRITICAL()" classname="ai.boss.guardrail.ShellPolicyEngineTest$WarningTests" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

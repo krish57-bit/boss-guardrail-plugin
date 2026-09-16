@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="10. Network &amp; Firewall" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.627Z" hostname="Krishs-MacBook-Air.local" time="0.002">
-  <properties/>
-  <testcase name="Block: iptables -F" classname="ai.boss.guardrail.ShellPolicyEngineTest$NetworkTests" time="0.001"/>
-  <testcase name="Block: ip6tables -F" classname="ai.boss.guardrail.ShellPolicyEngineTest$NetworkTests" time="0.0"/>
-  <testcase name="Block: ufw disable" classname="ai.boss.guardrail.ShellPolicyEngineTest$NetworkTests" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
