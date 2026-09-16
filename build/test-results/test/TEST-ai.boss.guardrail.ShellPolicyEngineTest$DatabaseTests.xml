@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="8. Database Destructive" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.590Z" hostname="Krishs-MacBook-Air.local" time="0.002">
+  <properties/>
+  <testcase name="blocks DELETE FROM without WHERE()" classname="ai.boss.guardrail.ShellPolicyEngineTest$DatabaseTests" time="0.0"/>
+  <testcase name="Block: psql -c 'DROP DATABASE production;'" classname="ai.boss.guardrail.ShellPolicyEngineTest$DatabaseTests" time="0.0"/>
+  <testcase name="Block: mysql -e 'DROP TABLE users'" classname="ai.boss.guardrail.ShellPolicyEngineTest$DatabaseTests" time="0.0"/>
+  <testcase name="Block: sqlite3 app.db 'TRUNCATE TABLE sessions'" classname="ai.boss.guardrail.ShellPolicyEngineTest$DatabaseTests" time="0.0"/>
+  <testcase name="Block: DROP SCHEMA public CASCADE;" classname="ai.boss.guardrail.ShellPolicyEngineTest$DatabaseTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

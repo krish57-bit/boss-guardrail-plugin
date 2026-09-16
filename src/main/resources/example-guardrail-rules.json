@@ -1,0 +1,20 @@
+[
+  {
+    "id": "CUSTOM_AWS_DELETE",
+    "name": "AWS Resource Deletion",
+    "category": "REMOTE_EXECUTION_PIPE",
+    "riskLevel": "CRITICAL_APPROVAL_REQUIRED",
+    "pattern": "\\baws\\s+.*delete-(stack|bucket|cluster|function)\\b",
+    "explanation": "Agent is attempting to delete cloud infrastructure via AWS CLI.",
+    "enabled": true
+  },
+  {
+    "id": "CUSTOM_CURL_NGROK",
+    "name": "Ngrok Exfiltration",
+    "category": "NETWORK_SECURITY",
+    "riskLevel": "WARNING",
+    "pattern": "\\b(curl|wget)\\s+.*ngrok\\.io\\b",
+    "explanation": "Agent is interacting with an Ngrok tunnel, potentially exfiltrating data.",
+    "enabled": true
+  }
+]

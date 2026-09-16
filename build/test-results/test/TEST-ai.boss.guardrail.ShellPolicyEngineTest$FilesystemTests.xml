@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="1. Filesystem Destruction" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.612Z" hostname="Krishs-MacBook-Air.local" time="0.008">
+  <properties/>
+  <testcase name="Block: rm -rf /" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.001"/>
+  <testcase name="Block: rm -rf /*" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -rf ~" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -rf ~/*" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -rf ./*" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -r node_modules" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -rf .git" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -rf src/" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.001"/>
+  <testcase name="Block: rm -R /var/data" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm --recursive --force /tmp/test" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm -r -f /home/user" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: rm   -r   -f   /important" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: sudo rm -rf /var/data" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.001"/>
+  <testcase name="Block: find / -name '*.log' -exec rm -rf {} \;" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: shred -u secret.txt" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: srm -vz sensitive.doc" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="Block: wipefs -a /dev/sdb" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.0"/>
+  <testcase name="blocks xargs rm pipeline()" classname="ai.boss.guardrail.ShellPolicyEngineTest$FilesystemTests" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

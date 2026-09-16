@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.boss.guardrail.GuardrailInterceptorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.507Z" hostname="Krishs-MacBook-Air.local" time="0.064">
+  <properties/>
+  <testcase name="Safe commands execute without suspension" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.031"/>
+  <testcase name="Timeout auto-blocks" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.006"/>
+  <testcase name="Dangerous command blocked on DENY" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.003"/>
+  <testcase name="Normalized whitespace session key matching" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.001"/>
+  <testcase name="Disabled guardrail passes everything" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.0"/>
+  <testcase name="clearAuditLogs empties history" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.0"/>
+  <testcase name="Dangerous command suspends and resumes on ALLOW_ONCE" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.001"/>
+  <testcase name="clearSessionAllowList revokes approvals" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.001"/>
+  <testcase name="ALLOW_FOR_SESSION caches for repeat commands" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.001"/>
+  <testcase name="Executor exception is caught as Failed outcome" classname="ai.boss.guardrail.GuardrailInterceptorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

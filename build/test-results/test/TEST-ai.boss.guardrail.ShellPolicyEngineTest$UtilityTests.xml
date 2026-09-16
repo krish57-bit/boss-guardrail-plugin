@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="14. Engine Utilities" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.643Z" hostname="Krishs-MacBook-Air.local" time="0.001">
+  <properties/>
+  <testcase name="splitCommands splits on &amp;&amp; and semicolon()" classname="ai.boss.guardrail.ShellPolicyEngineTest$UtilityTests" time="0.0"/>
+  <testcase name="normalizeCommand collapses whitespace()" classname="ai.boss.guardrail.ShellPolicyEngineTest$UtilityTests" time="0.0"/>
+  <testcase name="empty command evaluates as safe()" classname="ai.boss.guardrail.ShellPolicyEngineTest$UtilityTests" time="0.0"/>
+  <testcase name="splitCommands does NOT split on pipe()" classname="ai.boss.guardrail.ShellPolicyEngineTest$UtilityTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

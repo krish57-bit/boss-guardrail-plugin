@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="9. Container &amp; Orchestration" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.576Z" hostname="Krishs-MacBook-Air.local" time="0.013">
+  <properties/>
+  <testcase name="Block: docker system prune -af --volumes" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.004"/>
+  <testcase name="Block: docker system prune --all --force" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <testcase name="Block: docker volume prune -f" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <testcase name="Block: kubectl delete namespace production" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <testcase name="Block: kubectl delete ns staging" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <testcase name="Block: kubectl delete deploy my-app" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <testcase name="Block: kubectl delete pod my-pod" classname="ai.boss.guardrail.ShellPolicyEngineTest$ContainerTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

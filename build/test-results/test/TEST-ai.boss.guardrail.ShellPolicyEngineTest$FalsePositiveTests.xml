@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="12. False Positive Prevention" tests="31" skipped="0" failures="0" errors="0" timestamp="2026-09-16T19:42:11.596Z" hostname="Krishs-MacBook-Air.local" time="0.015">
+  <properties/>
+  <testcase name="Allow: ls -la" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: pwd" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git status" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git diff" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git log -n 10 --oneline" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git checkout -b feature/new-guardrail" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: cat README.md" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: cat build.gradle.kts" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: cat package.json" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: grep -rn 'TODO' ./src" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: grep -r 'shutdown' src/" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: grep -r 'reboot' logs/" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: echo 'shutting down gracefully'" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: echo 'halting process'" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git commit -m 'fix: resolve halting issue'" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: pytest tests/ -v" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: npm test" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: npm run build" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: cargo check" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: echo 'Hello World'" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: mkdir -p build/output" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: touch src/index.ts" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: find . -name '*.kt'" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: git remote add origin https://github.com/user/repo.git" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: npm run format" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: mv old_name.txt new_name.txt" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: cp src/main.kt src/backup.kt" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: docker ps" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: docker logs container_id" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.001"/>
+  <testcase name="Allow: pip install requests" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <testcase name="Allow: npm install express" classname="ai.boss.guardrail.ShellPolicyEngineTest$FalsePositiveTests" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

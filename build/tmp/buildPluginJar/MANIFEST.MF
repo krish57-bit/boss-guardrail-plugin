@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Implementation-Title: BOSS Guardrail Plugin
+Implementation-Version: 1.0.0
+Plugin-Class: ai.boss.guardrail.GuardrailPlugin
+Plugin-Id: ai.boss.guardrail
+
