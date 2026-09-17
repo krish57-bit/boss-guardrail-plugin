@@ -30,7 +30,7 @@ class HostIntegrationTest {
 
     private val risky = """{"command":"rm -rf build/"}"""
 
-    private fun TestScope.host(answer: suspend () -> DialogButton = { DialogButton.NEGATIVE }, projectPath: String? = null) =
+    private fun TestScope.host(projectPath: String? = null, answer: suspend () -> DialogButton = { DialogButton.NEGATIVE }) =
         FakeHost(scope = backgroundScope, dialogs = FakeDialogs(answer), projectPath = projectPath)
 
     @Test
