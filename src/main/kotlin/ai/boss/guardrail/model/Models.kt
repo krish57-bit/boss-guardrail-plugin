@@ -28,6 +28,8 @@ enum class ActionCategory(val displayName: String, val icon: String) {
     CONTAINER_DESTRUCTIVE("Container/Orchestration", "🐳"),
     NETWORK_SECURITY("Network/Firewall", "🛡️"),
     SERVICE_MANAGEMENT("Service Management", "⚙️"),
+    OBFUSCATED_EXECUTION("Obfuscated Execution", "🕵️"),
+    INLINE_SCRIPT("Inline Script", "📜"),
     SAFE_DEFAULT("General", "✅")
 }
 

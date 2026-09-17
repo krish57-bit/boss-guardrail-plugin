@@ -30,7 +30,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun GuardrailPanel(
     interceptor: GuardrailInterceptor,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    statusNote: String? = null,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val isShieldActive by interceptor.isEnabled.collectAsState()
@@ -54,13 +55,13 @@ fun GuardrailPanel(
                     )
                     Column {
                         Text("Agent Safety & Policy Interceptor", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("Governing AI Agent terminal execution in BOSS Console", fontSize = 12.sp, color = Color(0xFFA6ADC8))
+                        Text(statusNote ?: "Standalone demo: commands here are simulated", fontSize = 12.sp, color = Color(0xFFA6ADC8))
                     }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = if (isShieldActive) "ACTIVE" else "DISABLED",
+                        text = if (isShieldActive) "ACTIVE" else "PAUSED (refusing all)",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         color = if (isShieldActive) Color(0xFFA6E3A1) else Color(0xFFF38BA8)
                     )
