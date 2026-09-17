@@ -1,159 +1,148 @@
-<div align="center">
+# BOSS Agent Guardrail
 
-# 🛡️ BOSS Agent Guardrail
+A third-party plugin for [BOSS Console](https://github.com/risa-labs-inc/BossConsole). It adds a
+`guardrail_run` MCP tool: agents send shell commands to it, it checks each command against risk
+rules, and it asks you in a BOSS dialog before running anything risky. If you deny the command,
+don't answer in time, or the agent gives up, the command does not run.
 
-**A zero-overhead, native Kotlin safety middleware for [BOSS Console](https://github.com/risa-labs-inc/BossConsole)**. <br/>
-*Because giving autonomous AI agents `sudo` without a net is terrifying.*
+Not audited, not published by Risa Labs, and not in the Toolbox store.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Compose Multiplatform](https://img.shields.io/badge/Compose_Desktop-1.6.11-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-[![Build Status](https://img.shields.io/badge/Tests-140%2B_Passing-success.svg?logo=githubactions&logoColor=white)]()
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Hackathon](https://img.shields.io/badge/BOSS_Hackathon-Track_02-FF4500.svg?logo=hackaday&logoColor=white)]()
+## What it does
 
-[Features](#-features) • [Installation](#-installation) • [How it Works](#-architecture) • [Rules Engine](#-security-policies) • [Custom Rules](#-custom-json-rules)
+| Piece | What BOSS API it uses |
+| :--- | :--- |
+| `GuardrailDynamicPlugin`, the entry class | `DynamicPlugin`, loaded from `META-INF/boss-plugin/plugin.json` |
+| `guardrail_run`, `guardrail_check`, `guardrail_audit_log` tools (agents see `mcp__boss__guardrail_*`) | `PluginContext.registerMcpToolProvider` |
+| Approval prompt: **Allow once** / **Allow for session** / **Deny** | `PluginContext.genericDialogProvider.showThreeButtonDialog` |
+| Optional strict mode, which turns off BOSS's own shell tools | `PluginContext.mcpToolRegistry.setToolEnabled` |
+| Agent Guardrail panel (audit log, rules, dry-run tester) | `PluginContext.panelRegistry` |
 
-</div>
+How a `guardrail_run` call is handled:
 
----
+1. The command is checked against the rules. If nothing matches, it runs straight away (unless
+   `requireApprovalForAll` is on).
+2. If a rule matches, BOSS shows a dialog with the command and the rules it matched. Only one
+   dialog is shown at a time; other calls wait their turn.
+3. **Allow once** runs the command once. **Allow for session** also lets the same command
+   (ignoring extra spaces) run again without asking, until the plugin is disabled or BOSS restarts.
+4. **Deny**, closing the dialog, no answer within the timeout (45s by default), the agent
+   cancelling, a dialog error, or a BOSS build with no dialog provider all block the command.
+5. Allowed commands run with `/bin/sh -c` (`cmd.exe /c` on Windows) in the open project folder.
+   Output is capped, and the command is killed when it hits its time limit or the call is cancelled.
 
-## ⚡ Why Guardrail?
+The tool call carries no agent identity, so every agent shares one "session".
 
-AI agents are incredibly capable, but they hallucinate. A single hallucinated `rm -rf /`, an accidental `docker system prune`, or a remote payload execution (`curl | bash`) can completely brick your workspace.
+## What this does not protect
 
-**BOSS Agent Guardrail** acts as a hyper-vigilant hypervisor sitting between the AI agent's brain and the host terminal. By evaluating a custom Abstract Syntax Tree (AST) against 11 tiers of security policies, it instantly intercepts destructive actions and yields control back to a human operator via a non-blocking UI modal.
+This is best-effort, and you should read this section before relying on it.
 
----
+- **Only commands sent through `guardrail_run` are checked.** The BOSS plugin API has no hook
+  that lets a plugin intercept other commands. Commands an agent runs through its own shell tool
+  (for example Claude Code's Bash tool), through BOSS's `run_command` / `run_in_sidebar` /
+  `run_in_panel` / `send_input` / `terminal_exec`, or through other plugins' tools
+  (`k8s_exec`, `docker_*`, `codebase_write`, ...) never reach this plugin.
+- **Strict mode only closes the BOSS MCP shell tools.** It turns them off with the same
+  kill-switch as Toolbox → MCP. It does nothing about the agent's own shell tool, which you have
+  to restrict in the agent's own settings. BOSS saves the kill-switch state, so if BOSS exits
+  without disabling the plugin, those tools stay off until you turn them back on in
+  Toolbox → MCP.
+- **The rules are pattern matching and can be bypassed.** They cover common destructive
+  commands and common ways of hiding them (`eval`, a command name in a variable,
+  `sh -c "$(...)"`, decode-and-pipe-to-shell, quote-split names, `find -delete`, `truncate`,
+  inline `python -c` / `node -e` scripts). A determined agent can still write something they
+  miss. Use `requireApprovalForAll` if that matters to you.
+- **Keep BOSS's own controls on.** This plugin is not a substitute for BOSS's per-tool MCP
+  policy and kill-switch.
+- **BOSS ends every MCP tool call after 60 seconds.** That limit covers both the approval wait
+  and the command's run time, so this tool is not for long-running processes. Background
+  children (`cmd &`) are stopped when the command finishes.
+- **A timed-out dialog can't be closed from a plugin.** When a request times out or is
+  cancelled, the plugin shows a "command not run" notice in its place, so a late click can't
+  look like approval.
 
-## ✨ Features
+## Settings
 
-- **🚀 Zero-Blocking UI Thread:** Intercepts agent calls via Kotlin Coroutines (`CompletableDeferred`), pausing the agent's execution without hanging the Compose Event Dispatch Thread (EDT).
-- **🧠 Advanced AST Parsing:** Intelligently unspools chained commands (`&&`, `||`, `;`), extracts nested subshells (`$(...)` and `` `...` ``), but keeps piped streams (`|`) unified to detect composite attacks.
-- **🛡️ 11-Tier Defense Engine:** Native protection against filesystem wipes, docker purges, git force-pushes, privilege escalations, fork bombs, and SQL injection payloads.
-- **⚙️ Hot-Reloadable JSON Rules:** Drop custom regex policies into `guardrail-rules.json` (powered by `kotlinx.serialization`).
-- **⌨️ VIM-speed Workflow:** Keyboard-driven approvals. `Enter` to Allow Once, `Esc` to Deny.
-- **📊 Real-time Dashboard:** Built-in sandbox tester, live telemetry, and an interactive audit log backed by `StateFlow`.
+`~/.boss/plugins/config/guardrail-settings.json` (all fields optional):
 
----
-
-## 🏗️ Architecture
-
-Guardrail is built natively against the `boss-plugin-api`. It registers as a middleware interceptor in the terminal execution pipeline.
-
-```mermaid
-sequenceDiagram
-    participant AI as Agent (Claude/Codex)
-    participant GR as Guardrail Interceptor
-    participant Engine as Policy Engine
-    participant UI as Compose Desktop
-    participant Shell as Host Terminal
-
-    AI->>GR: executeCommand("rm -rf /")
-    GR->>Engine: evaluate()
-    Engine-->>GR: CRITICAL_APPROVAL_REQUIRED
-    
-    rect rgb(40, 40, 50)
-    Note over GR,UI: Non-blocking Coroutine Suspension
-    GR->>UI: emit ActiveApprovalRequest
-    UI->>Operator: Pop Approval Sheet (60s countdown)
-    Operator-->>UI: Deny (Esc)
-    UI-->>GR: CompletableDeferred.complete(DENY)
-    end
-    
-    GR-->>AI: BlockedOutcome("Command blocked by operator")
-    Note over AI,Shell: Host system remains untouched.
+```json
+{
+  "strictMode": false,
+  "requireApprovalForAll": false,
+  "approvalTimeoutSeconds": 45,
+  "maxCommandSeconds": 55
+}
 ```
 
----
+If this file exists but can't be read, the plugin asks before every command.
 
-## 🛡️ Security Policies
+### Custom rules
 
-The engine categorizes commands by risk vector. High-risk commands trigger the interactive approval sheet.
-
-<details>
-<summary><b>View All Default Protection Categories</b></summary>
-
-| Category | Icon | Risk Level | Examples Blocked |
-| :--- | :---: | :--- | :--- |
-| **Filesystem Destruction** | 🗑️ | `CRITICAL` | `rm -rf /`, `shred`, `wipefs`, `find . | xargs rm` |
-| **Disk Formatting** | 💿 | `CRITICAL` | `dd of=/dev/sda`, `mkfs.ext4`, `fdisk` |
-| **Git Destructive** | ⚠️ | `CRITICAL` | `git reset --hard`, `git push --force`, `git clean -fdx` |
-| **Privilege Escalation** | 🔓 | `CRITICAL` | `chmod 777`, `sudo su`, `chown -R root:root` |
-| **System DoS / Kill** | ⛔ | `CRITICAL` | `shutdown`, `killall -9`, `:(){ :|:& };:` (Fork bomb) |
-| **Remote Code Execution**| 🌐 | `CRITICAL` | `curl -s x.sh \| bash`, `base64 -d \| sh` |
-| **Secret Tampering** | 🔑 | `CRITICAL` | `cat ~/.aws/credentials`, `rm .env` |
-| **Database Destructive** | 🗄️ | `CRITICAL` | `DROP DATABASE`, `DELETE FROM users;` |
-| **Container Destructive**| 🐳 | `CRITICAL` | `docker system prune -a`, `kubectl delete ns` |
-| **Network Security** | 🛡️ | `CRITICAL` | `iptables -F`, `ufw disable` |
-| **Service Management** | ⚙️ | `WARNING` | `systemctl stop docker`, `npm install -g` |
-
-</details>
-
----
-
-## 🔧 Custom JSON Rules
-
-Extend the engine instantly without recompiling. Create or edit `~/.boss/plugins/config/guardrail-rules.json`:
+`~/.boss/plugins/config/guardrail-rules.json` (see
+[`example-guardrail-rules.json`](src/main/resources/example-guardrail-rules.json)). Patterns are
+case-insensitive Java regexes.
 
 ```json
 [
   {
     "id": "CUSTOM_AWS_DELETE",
-    "name": "AWS Infrastructure Deletion",
+    "name": "AWS Resource Deletion",
     "category": "REMOTE_EXECUTION_PIPE",
     "riskLevel": "CRITICAL_APPROVAL_REQUIRED",
-    "pattern": "\\baws\\s+.*delete-(stack|bucket|cluster)\\b",
-    "explanation": "Agent is attempting to delete cloud infrastructure via AWS CLI.",
+    "pattern": "\\baws\\s+.*delete-(stack|bucket|cluster|function)\\b",
+    "explanation": "Deletes cloud infrastructure via the AWS CLI.",
     "enabled": true
   }
 ]
 ```
 
----
+Both files are read when the plugin loads. After editing them, disable and re-enable the
+plugin to apply the changes.
 
-## 🚀 Installation
+## Build and install
 
-### Prerequisites
-- JDK 21+
-- Boss Console Desktop Environment
-
-### Build from Source
+You need JDK 17+. The build downloads the pinned `boss-plugin-api` release (currently 1.0.93).
+That API is `compileOnly`: the plugin jar never bundles it.
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/krish57-bit/boss-guardrail-plugin.git
-cd boss-guardrail-plugin
-
-# 2. Run the test suite (140+ parameterized edge-case tests)
-./gradlew test --no-daemon
-
-# 3. Build the plugin JAR
-./gradlew buildPluginJar --no-daemon
+./gradlew check            # tests + verifyPluginJar
+./gradlew buildPluginJar   # build/libs/boss-guardrail-plugin-<version>.jar
 ```
 
-### Deploy to BOSS
+To use a local API jar instead, pass `-PbossPluginApiJar=/path/to/boss-plugin-api-1.0.93.jar`.
 
-```bash
-# Copy the compiled artifact to your BOSS plugins directory
-mkdir -p ~/.boss/plugins
-cp build/libs/boss-guardrail-plugin-1.0.0.jar ~/.boss/plugins/
-```
-Restart BOSS Console. The Guardrail Dashboard will now be accessible via the Plugin Toolbox.
+To install the plugin, copy the jar into `~/.boss/plugins/`, restart BOSS, and enable
+**Agent Guardrail** in the Plugin Manager.
 
----
+To try it, ask an agent to call `mcp__boss__guardrail_run` with `rm -rf build/`. A BOSS dialog
+should appear, and nothing is deleted unless you allow it.
 
-## 🎮 Standalone Sandbox Mode
+`./gradlew run` opens a standalone demo window with simulated commands. It doesn't need BOSS.
 
-Want to test the UI and regex engine without installing BOSS? Run the standalone Compose app:
+## Tests
 
-```bash
-./gradlew run --no-daemon
-```
+- `HostIntegrationTest` registers the plugin with a `PluginContext` built only from the public
+  API, then sends agent calls as `McpToolRegistry.invoke("guardrail_run", "<json>")` through a
+  registry that parses arguments and applies the 60s limit the way BOSS does. It checks that:
+  - Deny, a closed dialog, a broken dialog, no dialog provider, the approval timeout, BOSS's
+    timeout and caller cancellation never run the command, including when Allow is clicked
+    after the caller gave up.
+  - Allow once runs the command exactly once and asks again next time.
+  - Allow for session is scoped to the exact command.
+  - Concurrent calls each get their own dialog.
+- `StrictModeTest` checks which tools get turned off and back on, that tools you turned off stay
+  off, and that the plugin doesn't turn a tool off again after you turn it back on.
+- `PluginLoadTest` loads the built jar like BossConsole's `DynamicPluginLoader`. It reads the
+  manifest, loads `mainClass` from the jar, requires it to implement `Plugin`, creates it with
+  the no-arg constructor, and validates it against the manifest and the store's publishing
+  checks.
+- `ShellCommandRunnerTest` uses real processes to cover exit codes, timeouts, killing the
+  process on cancellation, output truncation and background children.
+- `ShellPolicyEngineTest` and `BypassRulesTest` cover the rules, including the bypass examples
+  raised in review and cases that shouldn't be flagged.
 
-This launches a fully functional desktop sandbox where you can simulate agent commands, view the real-time interception sheets, and test custom JSON rules.
+These tests do not start BOSS itself. The host side is reproduced from the public API and
+BossConsole's `McpToolRegistryCore.invoke`, not run.
 
----
+## License
 
-<div align="center">
-<i>Built with ☕ and Kotlin for the 2026 BOSS Contributor Hackathon</i>
-</div>
+No license file has been added yet.
