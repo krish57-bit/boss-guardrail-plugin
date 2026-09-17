@@ -1,0 +1,43 @@
+name: CI
+
+# Builds the plugin jar against the pinned boss-plugin-api release, checks the
+# jar is loadable by BOSS (PluginLoadTest + verifyPluginJar), and runs every test.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, test and verify the plugin jar
+        run: ./gradlew check buildPluginJar --no-daemon --stacktrace
+
+      # A green run with zero integration tests would prove nothing.
+      - name: Assert the host-integration tests ran
+        run: |
+          for t in HostIntegrationTest PluginLoadTest StrictModeTest; do
+            f="build/test-results/test/TEST-ai.boss.guardrail.boss.$t.xml"
+            test -f "$f" || { echo "::error::$t produced no results"; exit 1; }
+            grep -q 'skipped="0"' "$f" || { echo "::error::$t skipped tests"; exit 1; }
+            grep -q 'tests="[1-9]' "$f" || { echo "::error::$t ran zero tests"; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plugin-and-test-reports
+          path: |
+            build/libs/boss-guardrail-plugin-*.jar
+            build/reports/tests/

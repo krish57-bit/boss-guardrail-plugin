@@ -3,9 +3,10 @@ package ai.boss.guardrail
 import ai.boss.guardrail.interceptor.GuardrailInterceptor
 import ai.boss.guardrail.model.ApprovalDecision
 import ai.boss.guardrail.model.ExecutionOutcome
-import ai.boss.guardrail.model.RiskLevel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -91,13 +93,56 @@ class GuardrailInterceptorTest {
     }
 
     @Test
-    @DisplayName("Disabled guardrail passes everything")
-    fun `disabled guardrail passes all`() = runTest {
+    @DisplayName("Paused guardrail refuses everything instead of passing it through")
+    fun `paused guardrail refuses all`() = runTest {
         interceptor.setEnabled(false)
-        val outcome = interceptor.executeGuarded("s", "rm -rf /") { "passed" }
-        assertTrue(outcome is ExecutionOutcome.Success)
-        assertEquals("passed", (outcome as ExecutionOutcome.Success).output)
+        var ran = 0
+        val risky = interceptor.executeGuarded("s", "rm -rf /") { ran++; "passed" }
+        val safe = interceptor.executeGuarded("s", "git status") { ran++; "passed" }
+        assertTrue(risky is ExecutionOutcome.Blocked)
+        assertTrue(safe is ExecutionOutcome.Blocked)
+        assertEquals(0, ran)
         interceptor.setEnabled(true)
+    }
+
+    @Test
+    @DisplayName("Cancelling the caller while waiting clears the sheet and never runs")
+    fun `cancellation while pending`() = runTest {
+        var ran = 0
+        val job = launch { interceptor.executeGuarded("c", "rm -rf build/") { ran++; "x" } }
+        val request = interceptor.pendingApproval.filterNotNull().first()
+        job.cancelAndJoin()
+        assertNull(interceptor.pendingApproval.value)
+        assertFalse(interceptor.submitDecision(request.id, ApprovalDecision.ALLOW_ONCE), "late answer is ignored")
+        assertEquals(0, ran)
+    }
+
+    @Test
+    @DisplayName("WARNING-level commands also ask")
+    fun `warning asks`() = runTest {
+        var ran = 0
+        val outcome = interceptor.executeGuarded("w", "npm install -g left-pad") { ran++; "x" }
+        assertTrue(outcome is ExecutionOutcome.Blocked) // nobody answered: timed out
+        assertEquals(0, ran)
+    }
+
+    @Test
+    @DisplayName("A prompter that throws is treated as deny")
+    fun `throwing prompter denies`() = runTest {
+        val i = GuardrailInterceptor(defaultTimeout = 500.milliseconds, prompter = { error("boom") })
+        var ran = 0
+        val outcome = i.executeGuarded("p", "git reset --hard") { ran++; "x" }
+        assertTrue(outcome is ExecutionOutcome.Blocked)
+        assertEquals(ApprovalDecision.DENY, i.auditLogs.value.single().decision)
+        assertEquals(0, ran)
+    }
+
+    @Test
+    @DisplayName("Audit log is capped")
+    fun `audit log capped`() = runTest {
+        val i = GuardrailInterceptor(maxAuditEntries = 3)
+        repeat(5) { i.executeGuarded("a", "echo $it") { "ok" } }
+        assertEquals(listOf("echo 2", "echo 3", "echo 4"), i.auditLogs.value.map { it.command })
     }
 
     @Test

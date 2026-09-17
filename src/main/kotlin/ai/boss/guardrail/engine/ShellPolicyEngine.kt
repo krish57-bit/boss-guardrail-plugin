@@ -5,8 +5,20 @@ import ai.boss.guardrail.model.PolicyEvaluation
 import ai.boss.guardrail.model.PolicyRule
 import ai.boss.guardrail.model.RiskLevel
 
+/**
+ * Pattern-matching classifier for shell commands.
+ *
+ * This is best-effort. A determined agent can always write a command these
+ * patterns do not recognise, which is why [requireApprovalForAll] exists and
+ * why the guardrail only covers commands sent through its own `guardrail_run`
+ * tool (see README "What this does not protect").
+ *
+ * @param requireApprovalForAll when true, commands that match no rule are
+ *   returned as [RiskLevel.WARNING] instead of SAFE, so every command asks.
+ */
 class ShellPolicyEngine(
-    private val customRules: List<PolicyRule> = emptyList()
+    private val customRules: List<PolicyRule> = emptyList(),
+    private val requireApprovalForAll: Boolean = false,
 ) {
 
     private val defaultRules: List<PolicyRule> = listOf(
@@ -217,7 +229,7 @@ class ShellPolicyEngine(
             name = "Docker System Prune",
             category = ActionCategory.CONTAINER_DESTRUCTIVE,
             riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
-            pattern = Regex("""\bdocker\s+(system\s+prune|volume\s+prune|image\s+prune|container\s+prune)\b.*(-a|--all|-f|--force)""", RegexOption.IGNORE_CASE),
+            pattern = Regex("""\bdocker\s+(system|volume|image|container|network|builder|buildx)\s+prune\b""", RegexOption.IGNORE_CASE),
             explanation = "Bulk removal of Docker resources."
         ),
         PolicyRule(
@@ -247,6 +259,107 @@ class ShellPolicyEngine(
             riskLevel = RiskLevel.WARNING,
             pattern = Regex("""\b(systemctl|service)\s+(stop|disable|mask)\s+\w+""", RegexOption.IGNORE_CASE),
             explanation = "Stopping or disabling a system service."
+        ),
+
+
+        // --- 13. Obfuscation: commands the patterns above cannot see through ---
+        PolicyRule(
+            id = "OBF_EVAL",
+            name = "eval of Dynamic Code",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""(^|[;&|({]\s*|\s)eval\s""", RegexOption.IGNORE_CASE),
+            explanation = "eval runs a string built at runtime, so its real command cannot be checked."
+        ),
+        PolicyRule(
+            id = "OBF_VARIABLE_COMMAND",
+            name = "Command Name From Variable",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""(^|[;&|({]\s*|\b(sudo|env|exec|command|nohup|xargs)\s+)["']?\$\{?[A-Za-z_][A-Za-z0-9_]*"""),
+            explanation = "The program to run comes from a variable, so it cannot be checked (e.g. R=rm; \$R -rf /)."
+        ),
+        PolicyRule(
+            id = "OBF_SHELL_C_DYNAMIC",
+            name = "Nested Shell With Substitution",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""\b(ba|z|da|k|fi)?sh\s+(-[a-z]*c[a-z]*)\s+.*(\$\(|`|\$\{?[A-Za-z_]|<<<|base64|printf|xxd)""", RegexOption.IGNORE_CASE),
+            explanation = "A nested shell runs text generated at runtime."
+        ),
+        PolicyRule(
+            id = "OBF_DECODE_TO_SHELL",
+            name = "Decoded Payload Executed",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""(base64\s+(-d|-D|--decode)|xxd\s+-r|openssl\s+(enc\s+)?.*-d\b|\brev\s).*(\|\s*(sudo\s+)?((ba|z|da|k)?sh|python[0-9.]*|perl|ruby|node)\b)""", RegexOption.IGNORE_CASE),
+            explanation = "Decodes hidden text and runs it."
+        ),
+        PolicyRule(
+            id = "OBF_PROCESS_SUBSTITUTION_SHELL",
+            name = "Shell Reading From Process Substitution",
+            category = ActionCategory.REMOTE_EXECUTION_PIPE,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""\b((ba|z|da|k)?sh|source|\.)\s+<\(""", RegexOption.IGNORE_CASE),
+            explanation = "Runs the output of another command as a script."
+        ),
+        PolicyRule(
+            id = "OBF_QUOTE_SPLIT",
+            name = "Quote or Backslash Inside Command Name",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""(^|[;&|({]\s*|\bsudo\s+)(\\[A-Za-z]|[A-Za-z]*(''|""|'[A-Za-z]+'|"[A-Za-z]+")[A-Za-z]+|[A-Za-z]+\\[A-Za-z])"""),
+            explanation = "Quotes or backslashes inside a program name are a common way to hide it (e.g. r''m, \\rm)."
+        ),
+
+        // --- 14. Destructive equivalents that do not use rm ---
+        PolicyRule(
+            id = "FS_FIND_DELETE",
+            name = "find -delete",
+            category = ActionCategory.FILESYSTEM_DESTRUCTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""\bfind\b.*\s-delete\b""", RegexOption.IGNORE_CASE),
+            explanation = "Deletes every file find matches."
+        ),
+        PolicyRule(
+            id = "FS_TRUNCATE_ZERO",
+            name = "Truncate File To Zero",
+            category = ActionCategory.FILESYSTEM_DESTRUCTION,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""\btruncate\b.*(-s\s*0|--size[= ]0)\b""", RegexOption.IGNORE_CASE),
+            explanation = "Empties file contents."
+        ),
+        PolicyRule(
+            id = "FS_REDIRECT_TO_DEVICE",
+            name = "Redirect Into Disk Device",
+            category = ActionCategory.DISK_FORMATTING,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex(""">\s*/dev/(sd[a-z]|nvme[0-9]|disk[0-9]|hd[a-z]|vd[a-z]|mmcblk[0-9])""", RegexOption.IGNORE_CASE),
+            explanation = "Writes straight over a disk device."
+        ),
+        PolicyRule(
+            id = "DISK_DD_ANY_OUTPUT",
+            name = "dd Writing a File",
+            category = ActionCategory.DISK_FORMATTING,
+            riskLevel = RiskLevel.WARNING,
+            pattern = Regex("""\bdd\b.*\bof=""", RegexOption.IGNORE_CASE),
+            explanation = "dd overwrites its output without asking."
+        ),
+        PolicyRule(
+            id = "SCRIPT_INLINE_DESTRUCTIVE",
+            name = "Inline Script Deleting Files Or Spawning Shells",
+            category = ActionCategory.INLINE_SCRIPT,
+            riskLevel = RiskLevel.CRITICAL_APPROVAL_REQUIRED,
+            pattern = Regex("""\b(python[0-9.]*|node|deno|bun|perl|ruby|php)\s+(-[a-zA-Z]*[ceE]\b|--eval\b).*(rmtree|os\.remove|os\.unlink|unlink|rmSync|rmdirSync|rm_rf|remove_dir|child_process|subprocess|os\.system|system\s*\(|exec\s*\(|spawn|File\.delete|FileUtils)""", RegexOption.IGNORE_CASE),
+            explanation = "A one-line script that deletes files or runs other programs."
+        ),
+        PolicyRule(
+            id = "WARN_ALIAS_DEFINITION",
+            name = "Alias Or Function Definition",
+            category = ActionCategory.OBFUSCATED_EXECUTION,
+            riskLevel = RiskLevel.WARNING,
+            pattern = Regex("""(\balias\s+[A-Za-z_][\w-]*=|^\s*(function\s+)?[A-Za-z_][\w-]*\s*\(\s*\)\s*\{)"""),
+            explanation = "Defines a new name for a command, which later checks cannot follow."
         ),
 
         // --- 12. Warnings (Medium Risk) ---
@@ -297,11 +410,12 @@ class ShellPolicyEngine(
             }
         }
 
-        val maxRisk = triggered.maxByOrNull { it.riskLevel.severity }?.riskLevel ?: RiskLevel.SAFE
-        val explanation = if (triggered.isNotEmpty()) {
-            triggered.joinToString(" | ") { "[${it.name}]: ${it.explanation}" }
-        } else {
-            "Command evaluated as safe."
+        val matchedRisk = triggered.maxByOrNull { it.riskLevel.severity }?.riskLevel
+        val maxRisk = matchedRisk ?: if (requireApprovalForAll) RiskLevel.WARNING else RiskLevel.SAFE
+        val explanation = when {
+            triggered.isNotEmpty() -> triggered.joinToString(" | ") { "[${it.name}]: ${it.explanation}" }
+            requireApprovalForAll -> "No rule matched, but settings require approval for every command."
+            else -> "No rule matched."
         }
 
         return PolicyEvaluation(command = rawCommand, riskLevel = maxRisk, triggeredRules = triggered, summaryExplanation = explanation)
